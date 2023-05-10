@@ -89,6 +89,14 @@ def write_file(data,ext):
 	f.write(data)
 	f.close()
 
+def get_file_extension(content_type):
+	if content_type == "text/plain;charset=utf-8":
+		file_extension = "txt"
+	else:
+		file_extension = content_type.split("/")[1]
+
+	return file_extension
+
 def main():
 	global args, raw, pointer
 	
@@ -98,7 +106,9 @@ def main():
 
 	content_type = read_content_type()
 	print(f"Content type: {content_type}")
-	file_extension = content_type.split("/")[1]
+
+	file_extension = get_file_extension(content_type)
+
 	assert(read_bytes() == b'\x00')
 
 	data = bytearray()
