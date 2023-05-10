@@ -72,10 +72,10 @@ def write_data_uri(data, content_type):
 	data_base64 = base64.encodebytes(data).decode("ascii").replace("\n", "")
 	print(f"data:{content_type};base64,{data_base64}")
 
-def write_file(data):
+def write_file(data,ext):
 	filename = args.output
 	if filename is None:
-		filename = base_filename = "out"
+		filename = base_filename = f"out"
 	else:
 		base_filename = filename
 		
@@ -85,7 +85,7 @@ def write_file(data):
 		filename = f"{base_filename}{i}"
 
 	print(f"Writing contents to file \"{filename}\"")
-	f = open(filename, "wb")
+	f = open(filename + f".{ext}", "wb")
 	f.write(data)
 	f.close()
 
@@ -98,6 +98,7 @@ def main():
 
 	content_type = read_content_type()
 	print(f"Content type: {content_type}")
+	file_extension = content_type.split("/")[1]
 	assert(read_bytes() == b'\x00')
 
 	data = bytearray()
@@ -113,7 +114,7 @@ def main():
 	if args.data_uri:
 		write_data_uri(data, content_type)
 	else:
-		write_file(data)
+		write_file(data,file_extension)
 	
 	print("\nDone")
 
