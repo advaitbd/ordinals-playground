@@ -1,24 +1,46 @@
 import sys, os, base64, argparse
+import requests
+
+# def get_cli_args():
+# 	ap = argparse.ArgumentParser(description="Parse and output the ordinal inscription inside transaction")
+# 	if sys.stdin.isatty():
+# 		ap.add_argument("tx_file", help="input raw transaction file")
+
+# 	ap.add_argument("-du", "--data-uri", action="store_true", help="print inscription as data-uri instead of writing to a file")
+# 	ap.add_argument("-o", "--output", help="write inscription to OUTPUT file")
+
+# 	return ap.parse_args()
 
 def get_cli_args():
-	ap = argparse.ArgumentParser(description="Parse and output the ordinal inscription inside transaction")
-	if sys.stdin.isatty():
-		ap.add_argument("tx_file", help="input raw transaction file")
+    ap = argparse.ArgumentParser(description="Parse and output the ordinal inscription inside transaction")
+    ap.add_argument("-du", "--data-uri", action="store_true", help="print inscription as data-uri instead of writing to a file")
+    ap.add_argument("-o", "--output", help="write inscription to OUTPUT file")
+    ap.add_argument("tx_id", help="transaction ID to retrieve from the API")
+    return ap.parse_args()
 
-	ap.add_argument("-du", "--data-uri", action="store_true", help="print inscription as data-uri instead of writing to a file")
-	ap.add_argument("-o", "--output", help="write inscription to OUTPUT file")
+def get_raw_data(tx_id):
+    url = f"https://mempool.space/api/tx/{tx_id}"
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"Failed to retrieve transaction data for {tx_id} from the API", file=sys.stderr)
+        sys.exit(1)
+	
+	# extract the txid.vin.witness field from the response
+    tx_witness = response.json()["vin"][0]["witness"]
+    # concatenate tx_witness array into a single string
+    tx_witness = "".join(tx_witness)
+    
+    return bytes.fromhex(tx_witness)
 
-	return ap.parse_args()
-
-def read_raw_data():
-	if not sys.stdin.isatty():
-		raw = bytes.fromhex(sys.stdin.read())
-	else:
-		file = open(args.tx_file)
-		raw = bytes.fromhex(file.read())
-		file.close()
+# def read_raw_data():
+# 	if not sys.stdin.isatty():
+# 		raw = bytes.fromhex(sys.stdin.read())
+# 	else:
+# 		file = open(args.tx_file)
+# 		raw = bytes.fromhex(file.read())
+# 		file.close()
   
-	return raw
+# 	return raw
 
 def read_bytes(n = 1):
 	global pointer
@@ -90,18 +112,19 @@ def write_file(data,ext):
 	f.close()
 
 def get_file_extension(content_type):
-	if content_type == "text/plain;charset=utf-8":
-		file_extension = "txt"
-	else:
-		file_extension = content_type.split("/")[1]
+    switcher = {
+        "text/plain;charset=utf-8": "txt",
+        "text/html;charset=utf-8": "html"
+    }
+    file_extension = switcher.get(content_type, content_type.split("/")[1])
+    return file_extension
 
-	return file_extension
 
 def main():
 	global args, raw, pointer
 	
 	args = get_cli_args()
-	raw = read_raw_data()
+	raw = get_raw_data(args.tx_id)
 	pointer = get_initial_position()
 
 	content_type = read_content_type()

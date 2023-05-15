@@ -1,0 +1,1 @@
+{"p":"brc-20","op":"mint","tick":"land","amt":"1"}
